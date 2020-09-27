@@ -50,8 +50,10 @@ spotify_dbus_get() {
 }
 
 spotify_status() {
-    # In the future, get the arguments passed to this to control formatting
-    # of what the user wants to send back (like date command)
+    # TODO:
+    #   + Get other info from metadata
+    #   + Only get the metadata once
+    #   + Add support for custom %formats
     args=$@
 
     status=$(spotify_dbus_get PlaybackStatus | grep -o "Playing")
@@ -59,7 +61,6 @@ spotify_status() {
         status="Paused"
     fi
 
-    # TODO: Get other info from metadata
     song=$(spotify_dbus_get Metadata | grep -m1 "xesam:title" -b1 \
         | tail -n1 | sed -e 's/.*"\(.*\)"/\1/')
     album=$(spotify_dbus_get Metadata | grep -m1 "xesam:album" -b1 \
