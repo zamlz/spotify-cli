@@ -89,11 +89,11 @@ else
 fi
 
 case "$CMD" in
-    "toggle")   spotify_dbus PlayPause      ;;
-    "next")     spotify_dbus Next           ;;
-    "prev")     spotify_dbus Previous       ;;
-    "raw")      spotify_dbus_get Metadata   ;;
-    "status")   spotify_status ${ARGS}      ;;
-    "")         spotify_status              ;;
-    *)          help_usage                  ;;
+    "toggle")   spotify_dbus_action PlayPause   ;;
+    "next")     spotify_dbus_action Next        ;;
+    "prev")     spotify_dbus_action Previous    ;;
+    "raw")      spotify_dbus_get Metadata       ;;
+    "status")   spotify_status ${ARGS}          ;;
+    "")         spotify_status                  ;;
+    *)          help_usage                      ;;
 esac
