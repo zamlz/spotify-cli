@@ -52,7 +52,6 @@ spotify_dbus_get() {
 spotify_status() {
     # TODO:
     #   + Get other info from metadata
-    #   + Only get the metadata once
     #   + Add support for custom %formats
     args=$@
 
@@ -60,19 +59,24 @@ spotify_status() {
     if [ "$status" != "Playing" ]; then
         status="Paused"
     fi
+    metadata=$(spotify_dbus_get Metadata)
 
-    song=$(spotify_dbus_get Metadata | grep -m1 "xesam:title" -b1 \
-        | tail -n1 | sed -e 's/.*"\(.*\)"/\1/')
-    album=$(spotify_dbus_get Metadata | grep -m1 "xesam:album" -b1 \
-        | tail -n1 | sed -e 's/.*"\(.*\)"/\1/')
-    artist=$(spotify_dbus_get Metadata| grep -m1 "xesam:artist" -b2 \
-        | tail -n1 | sed -e 's/.*"\(.*\)"/\1/')
+    title=$(echo $metadata \
+        | sed -e 's/.*"xesam:title"[^"]*"\([^"]*\)".*/\1/')
+    album=$(echo $metadata \
+        | sed -e 's/.*"xesam:album"[^"]*"\([^"]*\)".*/\1/')
+    artist=$(echo $metadata \
+        | sed -e 's/.*"xesam:artist"[^"]*"\([^"]*\)".*/\1/')
 
     if [ "$#" -eq 0 ]; then
-        echo "song: ${song}"
+        echo "title: ${title}"
         echo "artist: ${artist}"
         echo "album: ${album}"
         echo "status: ${status}"
+
+    elif [ "$args" = "RAW" ]; then
+        # This is for dev testing the above regex expressions
+        echo "$(echo $metadata)"
     else
         echo "formatted string support isn't available yet."
     fi
@@ -93,7 +97,6 @@ case "$CMD" in
     "toggle")   spotify_dbus_action PlayPause   ;;
     "next")     spotify_dbus_action Next        ;;
     "prev")     spotify_dbus_action Previous    ;;
-    "raw")      spotify_dbus_get Metadata       ;;
     "status")   spotify_status ${ARGS}          ;;
     "")         spotify_status                  ;;
     *)          help_usage                      ;;
