@@ -1,0 +1,84 @@
+#!/usr/bin/env sh
+
+# Simple cli interfact to spotify using dbus
+
+# BEFORE WE DO ANYTHING: Check if spotify is even alive
+if [ -z "$(pidof spotify)" ]; then
+    echo "ERROR: Spotify isn't running"
+    exit 1
+fi
+
+spotify_dbus_action() {
+    # Send Commands to spotify via DBUS.
+    # Supported options:
+    #   - Next
+    #   - Previous
+    #   - PlayPause
+    action=$1
+
+    dbus-send --print-reply \
+        --dest=org.mpris.MediaPlayer2.spotify \
+        /org/mpris/MediaPlayer2 org.mpris.MediaPlayer2.Player.${action}
+}
+
+spotify_dbus_get() {
+    # I don't know dbus well enough to know why this command is different.
+    # But its what works. I should eventually read up this...
+    # Supported options:
+    #   - PlaybackStatus
+    #   - Metadata
+    get_item="string:$1"
+    dbus-send --print-reply \
+        --dest=org.mpris.MediaPlayer2.spotify \
+        /org/mpris/MediaPlayer2 org.freedesktop.DBus.Properties.Get \
+        string:'org.mpris.MediaPlayer2.Player' $get_item
+}
+
+spotify_status() {
+    # In the future, get the arguments passed to this to control formatting
+    # of what the user wants to send back (like date command)
+    args=$@
+
+    status=$(spotify_dbus_get PlaybackStatus | grep -o "Playing")
+    if [ "$status" != "Playing" ]; then
+        status="Paused"
+    fi
+
+    # TODO: Get other info from metadata
+    song=$(spotify_dbus_get Metadata | grep -m1 "xesam:title" -b1 \
+        | tail -n1 | sed -e 's/.*"\(.*\)"/\1/')
+    album=$(spotify_dbus_get Metadata | grep -m1 "xesam:album" -b1 \
+        | tail -n1 | sed -e 's/.*"\(.*\)"/\1/')
+    artist=$(spotify_dbus_get Metadata| grep -m1 "xesam:artist" -b2 \
+        | tail -n1 | sed -e 's/.*"\(.*\)"/\1/')
+
+    if [ "$#" -eq 0 ]; then
+        echo "song:   ${song}"
+        echo "artist: ${artist}"
+        echo "album:  ${album}"
+        echo "status: ${status}"
+    else
+        echo "formatted string support isn't available yet."
+    fi
+}
+
+help_usage() {
+    echo "plz help"
+}
+
+# Parse command line arguments
+if [ "$#" -eq 0 ]; then
+    CMD="" && ARGS=""
+else
+    CMD=$1 && shift && ARGS=$@
+fi
+
+case "$CMD" in
+    "toggle")   spotify_dbus PlayPause      ;;
+    "next")     spotify_dbus Next           ;;
+    "prev")     spotify_dbus Previous       ;;
+    "raw")      spotify_dbus_get Metadata   ;;
+    "status")   spotify_status ${ARGS}      ;;
+    "")         spotify_status              ;;
+    *)          help_usage                  ;;
+esac
