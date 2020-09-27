@@ -68,9 +68,9 @@ spotify_status() {
         | tail -n1 | sed -e 's/.*"\(.*\)"/\1/')
 
     if [ "$#" -eq 0 ]; then
-        echo "song:   ${song}"
+        echo "song: ${song}"
         echo "artist: ${artist}"
-        echo "album:  ${album}"
+        echo "album: ${album}"
         echo "status: ${status}"
     else
         echo "formatted string support isn't available yet."
